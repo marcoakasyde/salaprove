@@ -68,11 +68,13 @@
   <script>
     const SUPABASE_URL = "https://dknjqqzmealcwwrglthe.supabase.co"; 
     const SUPABASE_KEY = "sb_publishable_dGX0VSu1xqMwQnCqq6th9w_DcjJFYhT";
+    
+    // Password richiesta per sbloccare il cambio gruppo o modifiche di sicurezza
+    const PASSWORD_ADMIN = "rock"; 
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let mioGruppo = localStorage.getItem('gruppo_sala_prove');
 
-    // Gestione data corrente visualizzata nel calendario
     let dataVisualizzata = new Date();
 
     function init() {
@@ -80,7 +82,7 @@
         document.getElementById('seleziona-gruppo').classList.add('hidden');
         document.getElementById('app').classList.remove('hidden');
         const nomeGruppo = mioGruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
-        document.getElementById('info-gruppo'].innerText = "Gruppo: " + nomeGruppo;
+        document.getElementById('info-gruppo').innerText = "Gruppo: " + nomeGruppo;
         caricaCalendario();
       }
     }
@@ -92,6 +94,12 @@
     }
 
     function cambiaGruppo() {
+      const pwd = prompt("Inserisci la password per cambiare gruppo:");
+      if (pwd === null) return; // Annullato
+      if (pwd !== PASSWORD_ADMIN) {
+        alert("Password errata!");
+        return;
+      }
       localStorage.removeItem('gruppo_sala_prove');
       location.reload();
     }
@@ -108,11 +116,9 @@
       const anno = dataVisualizzata.getFullYear();
       const mese = dataVisualizzata.getMonth();
 
-      // Scrivi il nome del mese in italiano in alto
       const nomeMese = dataVisualizzata.toLocaleString('it-IT', { month: 'long', year: 'numeric' });
       document.getElementById('titolo-mese').innerText = nomeMese;
 
-      // Scarica tutte le prenotazioni dal database
       const { data: prenotazioni, error } = await sb.from('prenotazioni').select('*');
       
       if (error) {
@@ -126,7 +132,6 @@
 
       cal.innerHTML = '';
 
-      // Intestazioni giorni della settimana (Lun - Dom)
       const nomiGiorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
       nomiGiorni.forEach(g => {
         const div = document.createElement('div');
@@ -135,26 +140,21 @@
         cal.appendChild(div);
       });
 
-      // Primo giorno del mese e totale giorni del mese
       const primoGiornoDelMese = new Date(anno, mese, 1);
       const ultimoGiornoDelMese = new Date(anno, mese + 1, 0);
       const totaleGiorni = ultimoGiornoDelMese.getDate();
 
-      // Calcola l'offset per allineare il giorno della settimana (Lunedì = 0)
       let giornoSettimanaInizio = primoGiornoDelMese.getDay();
       giornoSettimanaInizio = (giornoSettimanaInizio === 0) ? 6 : giornoSettimanaInizio - 1;
 
-      // Caselle vuote iniziali per allineamento
       for (let i = 0; i < giornoSettimanaInizio; i++) {
         const vuoto = document.createElement('div');
         vuoto.className = 'day vuoto';
         cal.appendChild(vuoto);
       }
 
-      // Generazione giorni del mese
       for (let giorno = 1; giorno <= totaleGiorni; giorno++) {
         const d = new Date(anno, mese, giorno);
-        // Formato data YYYY-MM-DD gestendo il fuso orario locale
         const annoStr = d.getFullYear();
         const meseStr = String(d.getMonth() + 1).padStart(2, '0');
         const giornoStr = String(d.getDate()).padStart(2, '0');
