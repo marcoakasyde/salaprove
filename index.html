@@ -54,7 +54,8 @@
     const SUPABASE_KEY = "sb_publishable_dGX0VSu1xqMwQnCqq6th9w_DcjJFYhT";
     // ========================
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Usiamo 'sb' per evitare conflitti con la libreria globale
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let mioGruppo = localStorage.getItem('gruppo_sala_prove');
 
     function init() {
@@ -81,7 +82,7 @@
       const cal = document.getElementById('calendario');
       cal.innerHTML = 'Caricamento date...';
 
-      const { data: prenotazioni, error } = await supabase.from('prenotazioni').select('*');
+      const { data: prenotazioni, error } = await sb.from('prenotazioni').select('*');
       
       if (error) {
         alert("Errore di connessione al DB: controlla le chiavi Supabase nel codice!");
@@ -125,12 +126,12 @@
     }
 
     async function prenota(dataStr) {
-      await supabase.from('prenotazioni').insert([{ data: dataStr, gruppo: mioGruppo }]);
+      await sb.from('prenotazioni').insert([{ data: dataStr, gruppo: mioGruppo }]);
       caricaCalendario();
     }
 
     async function libera(dataStr) {
-      await supabase.from('prenotazioni').delete().eq('data', dataStr);
+      await sb.from('prenotazioni').delete().eq('data', dataStr);
       caricaCalendario();
     }
 
