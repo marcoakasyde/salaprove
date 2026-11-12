@@ -68,10 +68,6 @@
   <script>
     const SUPABASE_URL = "https://dknjqqzmealcwwrglthe.supabase.co"; 
     const SUPABASE_KEY = "sb_publishable_dGX0VSu1xqMwQnCqq6th9w_DcjJFYhT";
-    
-    // PASSWORD SEPARATE PER GRUPPO
-    const PASSWORD_GRUPPO_A = "nexus"; // Password Nexus Opera
-    const PASSWORD_GRUPPO_B = "jett";  // Password Black Jett
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let mioGruppo = localStorage.getItem('gruppo_sala_prove');
@@ -83,7 +79,7 @@
         document.getElementById('seleziona-gruppo').classList.add('hidden');
         document.getElementById('app').classList.remove('hidden');
         const nomeGruppo = mioGruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
-        document.getElementById('info-gruppo').innerText = "Gruppo: " + nomeGruppo;
+        document.getElementById('info-gruppo'].innerText = "Gruppo: " + nomeGruppo;
         caricaCalendario();
       }
     }
@@ -93,31 +89,16 @@
       const pwdInserita = prompt(`Inserisci la password per ${nome}:`);
       if (pwdInserita === null) return;
 
-      const pwdCorretta = (g === 'A') ? PASSWORD_GRUPPO_A : PASSWORD_GRUPPO_B;
-
-      if (pwdInserita !== pwdCorretta) {
-        alert("Password errata!");
-        return;
-      }
-
+      // Salviamo temporaneamente la password per poterla usare nelle chiamate protette
+      localStorage.setItem('pwd_sala_prove', pwdInserita);
       localStorage.setItem('gruppo_sala_prove', g);
       mioGruppo = g;
       init();
     }
 
     function cambiaGruppo() {
-      const nome = mioGruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
-      const pwdInserita = prompt(`Inserisci la password di ${nome} per uscire:`);
-      if (pwdInserita === null) return;
-
-      const pwdCorretta = (mioGruppo === 'A') ? PASSWORD_GRUPPO_A : PASSWORD_GRUPPO_B;
-
-      if (pwdInserita !== pwdCorretta) {
-        alert("Password errata!");
-        return;
-      }
-
       localStorage.removeItem('gruppo_sala_prove');
+      localStorage.removeItem('pwd_sala_prove');
       location.reload();
     }
 
@@ -134,7 +115,7 @@
       const mese = dataVisualizzata.getMonth();
 
       const nomeMese = dataVisualizzata.toLocaleString('it-IT', { month: 'long', year: 'numeric' });
-      document.getElementById('titolo-mese').innerText = nomeMese;
+      document.getElementById('titolo-mese'].innerText = nomeMese;
 
       const { data: prenotazioni, error } = await sb.from('prenotazioni').select('*');
       
@@ -201,12 +182,32 @@
     }
 
     async function prenota(dataStr) {
-      await sb.from('prenotazioni').insert([{ data: dataStr, gruppo: mioGruppo }]);
+      const pwd = localStorage.getItem('pwd_sala_prove');
+      // Chiamiamo la funzione sicura sul database
+      const { error } = await sb.rpc('f_prenota', { 
+        p_data: dataStr, 
+        p_gruppo: mioGruppo, 
+        p_password: pwd 
+      });
+
+      if (error) {
+        alert("Operazione non consentita: Password errata o data già occupata!");
+      }
       caricaCalendario();
     }
 
     async function libera(dataStr) {
-      await sb.from('prenotazioni').delete().eq('data', dataStr);
+      const pwd = localStorage.getItem('pwd_sala_prove');
+      // Chiamiamo la funzione sicura sul database per la cancellazione
+      const { error } = await sb.rpc('f_libera', { 
+        p_data: dataStr, 
+        p_gruppo: mioGruppo, 
+        p_password: pwd 
+      });
+
+      if (error) {
+        alert("Impossibile eliminare: Password errata o non autorizzato!");
+      }
       caricaCalendario();
     }
 
