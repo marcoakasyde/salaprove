@@ -90,19 +90,17 @@
         document.getElementById('seleziona-gruppo').classList.add('hidden');
         document.getElementById('app').classList.remove('hidden');
         const nomeGruppo = mioGruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
-        document.getElementById('info-gruppo'].innerText = "Gruppo: " + nomeGruppo;
+        document.getElementById('info-gruppo').innerText = "Gruppo: " + nomeGruppo;
         caricaCalendario();
       }
     }
 
     function tentaAccesso(g) {
-      // Chiude eventuali tastiere aperte sul browser prima del prompt
       if (document.activeElement) document.activeElement.blur();
 
       const nome = g === 'A' ? 'Nexus Opera' : 'Black Jett';
       const pwdInserita = prompt(`Inserisci la password per ${nome}:`);
       
-      // Forza la chiusura della tastiera del prompt su mobile
       if (document.activeElement) document.activeElement.blur();
 
       if (pwdInserita === null) return;
@@ -147,7 +145,7 @@
       const mese = dataVisualizzata.getMonth();
 
       const nomeMese = dataVisualizzata.toLocaleString('it-IT', { month: 'long', year: 'numeric' });
-      document.getElementById('titolo-mese'].innerText = nomeMese;
+      document.getElementById('titolo-mese').innerText = nomeMese;
 
       const { data: prenotazioni, error } = await sb.from('prenotazioni').select('*');
       
