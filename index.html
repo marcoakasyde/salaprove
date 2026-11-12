@@ -7,32 +7,32 @@
   <link rel="manifest" href="manifest.json">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; text-align: center; margin: 0; padding: 20px; background: #f4f4f9; color: #333; }
+    body { font-family: system-ui, -apple-system, sans-serif; text-align: center; margin: 0; padding: 20px; background: #222222; color: #f4f4f9; }
     .hidden { display: none !important; }
     h2, h3 { margin-bottom: 20px; }
     
     .btn-group { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
-    button.btn-a { background: #2196F3; color: white; padding: 15px 25px; font-size: 18px; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; }
-    button.btn-b { background: #E91E63; color: white; padding: 15px 25px; font-size: 18px; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; }
+    button.btn-a { background: #ffffff; color: #111111; padding: 15px 25px; font-size: 18px; font-weight: bold; border: 2px solid #ffffff; border-radius: 10px; cursor: pointer; }
+    button.btn-b { background: #111111; color: #ffffff; padding: 15px 25px; font-size: 18px; font-weight: bold; border: 2px solid #ffffff; border-radius: 10px; cursor: pointer; }
     
-    .top-bar { display: flex; justify-content: space-between; align-items: center; max-width: 450px; margin: 0 auto 15px; background: white; padding: 10px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .group-info { font-weight: bold; color: #555; }
-    .btn-reset { font-size: 11px; background: #777; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; max-width: 450px; margin: 0 auto 15px; background: #333333; padding: 10px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    .group-info { font-weight: bold; color: #fff; }
+    .btn-reset { font-size: 11px; background: #555; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; }
 
     /* Navigazione Mesi */
-    .month-nav { display: flex; justify-content: space-between; align-items: center; max-width: 450px; margin: 0 auto 10px; background: white; padding: 10px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .month-nav { display: flex; justify-content: space-between; align-items: center; max-width: 450px; margin: 0 auto 10px; background: #333333; padding: 10px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
     .month-nav button { background: #555; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .month-title { font-size: 18px; font-weight: bold; text-transform: capitalize; color: #333; }
+    .month-title { font-size: 18px; font-weight: bold; text-transform: capitalize; color: #fff; }
 
     /* Calendario Griglia */
     .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; max-width: 450px; margin: 0 auto; }
-    .weekday { font-size: 12px; font-weight: bold; color: #777; padding-bottom: 4px; }
-    .day { padding: 12px 2px; border-radius: 8px; background: white; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.05); user-select: none; font-size: 14px; min-height: 42px; display: flex; align-items: center; justify-content: center; }
+    .weekday { font-size: 12px; font-weight: bold; color: #aaa; padding-bottom: 4px; }
+    .day { padding: 12px 2px; border-radius: 8px; background: #444; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); user-select: none; font-size: 14px; min-height: 42px; display: flex; align-items: center; justify-content: center; }
     .day.vuoto { background: transparent; box-shadow: none; cursor: default; }
-    .day.libero { background: #e0e0e0; cursor: pointer; }
-    .day.gruppo-a { background: #2196F3; color: white; cursor: pointer; }
-    .day.gruppo-b { background: #E91E63; color: white; cursor: pointer; }
-    .day.disabilitato { cursor: not-allowed; opacity: 0.4; }
+    .day.libero { background: #666666; color: #fff; cursor: pointer; }
+    .day.gruppo-a { background: #ffffff; color: #111111; cursor: pointer; }
+    .day.gruppo-b { background: #111111; color: #ffffff; border: 1px solid #555; cursor: pointer; }
+    .day.disabilitato { cursor: not-allowed; opacity: 0.3; }
   </style>
 </head>
 <body>
@@ -42,8 +42,8 @@
     <h2>Seleziona il tuo Gruppo</h2>
     <p>La scelta verrà memorizzata su questo dispositivo.</p>
     <div class="btn-group">
-      <button class="btn-a" onclick="scegliGruppo('A')">Nexus Opera</button>
-      <button class="btn-b" onclick="scegliGruppo('B')">Black Jett</button>
+      <button class="btn-a" onclick="tentaAccesso('A')">Nexus Opera</button>
+      <button class="btn-b" onclick="tentaAccesso('B')">Black Jett</button>
     </div>
   </div>
 
@@ -69,8 +69,9 @@
     const SUPABASE_URL = "https://dknjqqzmealcwwrglthe.supabase.co"; 
     const SUPABASE_KEY = "sb_publishable_dGX0VSu1xqMwQnCqq6th9w_DcjJFYhT";
     
-    // Password richiesta per sbloccare il cambio gruppo o modifiche di sicurezza
-    const PASSWORD_ADMIN = "rock"; 
+    // PASSWORD SEPARATE PER GRUPPO
+    const PASSWORD_GRUPPO_A = "nexus"; // Password Nexus Opera
+    const PASSWORD_GRUPPO_B = "jett";  // Password Black Jett
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let mioGruppo = localStorage.getItem('gruppo_sala_prove');
@@ -87,19 +88,35 @@
       }
     }
 
-    function scegliGruppo(g) {
+    function tentaAccesso(g) {
+      const nome = g === 'A' ? 'Nexus Opera' : 'Black Jett';
+      const pwdInserita = prompt(`Inserisci la password per ${nome}:`);
+      if (pwdInserita === null) return;
+
+      const pwdCorretta = (g === 'A') ? PASSWORD_GRUPPO_A : PASSWORD_GRUPPO_B;
+
+      if (pwdInserita !== pwdCorretta) {
+        alert("Password errata!");
+        return;
+      }
+
       localStorage.setItem('gruppo_sala_prove', g);
       mioGruppo = g;
       init();
     }
 
     function cambiaGruppo() {
-      const pwd = prompt("Inserisci la password per cambiare gruppo:");
-      if (pwd === null) return; // Annullato
-      if (pwd !== PASSWORD_ADMIN) {
+      const nome = mioGruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
+      const pwdInserita = prompt(`Inserisci la password di ${nome} per uscire:`);
+      if (pwdInserita === null) return;
+
+      const pwdCorretta = (mioGruppo === 'A') ? PASSWORD_GRUPPO_A : PASSWORD_GRUPPO_B;
+
+      if (pwdInserita !== pwdCorretta) {
         alert("Password errata!");
         return;
       }
+
       localStorage.removeItem('gruppo_sala_prove');
       location.reload();
     }
