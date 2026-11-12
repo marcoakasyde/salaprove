@@ -49,10 +49,10 @@
   </div>
 
   <script>
-    // === SOSTITUISCI QUESTI DUE VALORI CON I TUOI DATI DI SUPABASE ===
+    // === DATI DI SUPABASE ===
     const SUPABASE_URL = "https://dknjqqzmealcwwrglthe.supabase.co"; 
     const SUPABASE_KEY = "sb_publishable_dGX0VSu1xqMwQnCqq6th9w_DcjJFYhT";
-    // ==============================================================
+    // ========================
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let mioGruppo = localStorage.getItem('gruppo_sala_prove');
@@ -61,7 +61,7 @@
       if (mioGruppo) {
         document.getElementById('seleziona-gruppo').classList.add('hidden');
         document.getElementById('app').classList.remove('hidden');
-        document.getElementById('info-gruppo').innerText = "Sei nel Gruppo " + mioGruppo;
+        document.getElementById('info-gruppo').innerText = "Sei nel Gruppo " + (mioGruppo === 'A' ? 'Nexus Opera' : 'Black Jett');
         caricaCalendario();
       }
     }
