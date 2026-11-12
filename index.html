@@ -30,9 +30,14 @@
     .day { padding: 12px 2px; border-radius: 8px; background: #444; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); user-select: none; font-size: 14px; min-height: 42px; display: flex; align-items: center; justify-content: center; }
     .day.vuoto { background: transparent; box-shadow: none; cursor: default; }
     .day.libero { background: #666666; color: #fff; cursor: pointer; }
+    
+    /* Gruppo A: Nexus Opera = Bianco */
     .day.gruppo-a { background: #ffffff; color: #111111; cursor: pointer; }
-    .day.gruppo-b { background: #111111; color: #ffffff; border: 1px solid #555; cursor: pointer; }
-    .day.disabilitato { cursor: not-allowed; opacity: 0.3; }
+    
+    /* Gruppo B: Black Jett = Nero con bordo chiaro */
+    .day.gruppo-b { background: #111111; color: #ffffff; border: 1px solid #777; cursor: pointer; }
+    
+    .day.disabilitato { cursor: not-allowed; opacity: 0.5; }
   </style>
 </head>
 <body>
@@ -79,7 +84,7 @@
         document.getElementById('seleziona-gruppo').classList.add('hidden');
         document.getElementById('app').classList.remove('hidden');
         const nomeGruppo = mioGruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
-        document.getElementById('info-gruppo'].innerText = "Gruppo: " + nomeGruppo;
+        document.getElementById('info-gruppo').innerText = "Gruppo: " + nomeGruppo;
         caricaCalendario();
       }
     }
@@ -89,7 +94,6 @@
       const pwdInserita = prompt(`Inserisci la password per ${nome}:`);
       if (pwdInserita === null) return;
 
-      // Salviamo temporaneamente la password per poterla usare nelle chiamate protette
       localStorage.setItem('pwd_sala_prove', pwdInserita);
       localStorage.setItem('gruppo_sala_prove', g);
       mioGruppo = g;
@@ -115,7 +119,7 @@
       const mese = dataVisualizzata.getMonth();
 
       const nomeMese = dataVisualizzata.toLocaleString('it-IT', { month: 'long', year: 'numeric' });
-      document.getElementById('titolo-mese'].innerText = nomeMese;
+      document.getElementById('titolo-mese').innerText = nomeMese;
 
       const { data: prenotazioni, error } = await sb.from('prenotazioni').select('*');
       
@@ -183,7 +187,6 @@
 
     async function prenota(dataStr) {
       const pwd = localStorage.getItem('pwd_sala_prove');
-      // Chiamiamo la funzione sicura sul database
       const { error } = await sb.rpc('f_prenota', { 
         p_data: dataStr, 
         p_gruppo: mioGruppo, 
@@ -198,7 +201,6 @@
 
     async function libera(dataStr) {
       const pwd = localStorage.getItem('pwd_sala_prove');
-      // Chiamiamo la funzione sicura sul database per la cancellazione
       const { error } = await sb.rpc('f_libera', { 
         p_data: dataStr, 
         p_gruppo: mioGruppo, 
