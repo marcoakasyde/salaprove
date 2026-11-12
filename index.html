@@ -31,13 +31,13 @@
     .day.vuoto { background: transparent; box-shadow: none; cursor: default; }
     .day.libero { background: #666666; color: #fff; cursor: pointer; }
     
-    /* Gruppo A: Nexus Opera = Bianco */
-    .day.gruppo-a { background: #ffffff; color: #111111; cursor: pointer; }
+    /* Nexus Opera (Gruppo A): Sempre Bianco con testo scuro per tutti */
+    .day.gruppo-a { background: #ffffff !important; color: #111111 !important; }
     
-    /* Gruppo B: Black Jett = Nero con bordo chiaro */
-    .day.gruppo-b { background: #111111; color: #ffffff; border: 1px solid #777; cursor: pointer; }
+    /* Black Jett (Gruppo B): Sempre Nero con testo bianco e bordo per tutti */
+    .day.gruppo-b { background: #111111 !important; color: #ffffff !important; border: 1px solid #777; }
     
-    .day.disabilitato { cursor: not-allowed; opacity: 0.5; }
+    .day.disabilitato { cursor: not-allowed; opacity: 0.8; }
   </style>
 </head>
 <body>
@@ -173,12 +173,18 @@
           el.onclick = () => prenota(dataStr);
         } else if (occupatoDa === 'A') {
           el.classList.add('gruppo-a');
-          if (mioGruppo === 'A') el.onclick = () => libera(dataStr);
-          else el.classList.add('disabilitato');
+          if (mioGruppo === 'A') {
+            el.onclick = () => libera(dataStr); // I Nexus possono liberare le loro date
+          } else {
+            el.classList.add('disabilitato'); // I Jett vedono le date Nexus bianche ma non possono toccarle
+          }
         } else if (occupatoDa === 'B') {
           el.classList.add('gruppo-b');
-          if (mioGruppo === 'B') el.onclick = () => libera(dataStr);
-          else el.classList.add('disabilitato');
+          if (mioGruppo === 'B') {
+            el.onclick = () => libera(dataStr); // I Jett possono liberare le loro date
+          } else {
+            el.classList.add('disabilitato'); // I Nexus vedono le date Jett nere con testo bianco ma non possono toccarle
+          }
         }
 
         cal.appendChild(el);
