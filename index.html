@@ -32,13 +32,18 @@
     .day.vuoto { background: transparent; box-shadow: none; cursor: default; }
     .day.libero { background: #666666; color: #fff; cursor: pointer; }
     
-    /* Nexus Opera (Gruppo A): Sempre Bianco */
     .day.gruppo-a { background: #ffffff !important; color: #111111 !important; }
-    
-    /* Black Jett (Gruppo B): Sempre Nero con testo bianco */
     .day.gruppo-b { background: #111111 !important; color: #ffffff !important; border: 1px solid #777; }
-    
     .day.disabilitato { cursor: not-allowed; opacity: 0.8; }
+
+    /* Modale Password Personalizzato */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-box { background: #333; padding: 20px; border-radius: 12px; max-width: 300px; width: 80%; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    .modal-box input { width: 90%; padding: 10px; margin: 15px 0; border: 1px solid #555; border-radius: 6px; font-size: 16px; background: #222; color: #fff; text-align: center; }
+    .modal-actions { display: flex; justify-content: space-around; }
+    .modal-actions button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .btn-confirm { background: #4CAF50; color: white; }
+    .btn-cancel { background: #f44336; color: white; }
   </style>
 </head>
 <body>
@@ -48,8 +53,8 @@
     <h2>Seleziona il tuo Gruppo</h2>
     <p>La scelta verrà memorizzata su questo dispositivo.</p>
     <div class="btn-group">
-      <button class="btn-a" onclick="tentaAccesso('A')">Nexus Opera</button>
-      <button class="btn-b" onclick="tentaAccesso('B')">Black Jett</button>
+      <button class="btn-a" onclick="apriModalAccesso('A')">Nexus Opera</button>
+      <button class="btn-b" onclick="apriModalAccesso('B')">Black Jett</button>
     </div>
   </div>
 
@@ -57,22 +62,31 @@
   <div id="app" class="hidden">
     <div class="top-bar">
       <span id="info-gruppo" class="group-info"></span>
-      <button class="btn-reset" onclick="cambiaGruppo()">Cambia Gruppo</button>
+      <button class="btn-reset" onclick="apriModalUscita()">Cambia Gruppo</button>
     </div>
 
-    <!-- Barra Navigazione Mese -->
     <div class="month-nav">
       <button onclick="cambiaMese(-1)">&larr; Prec</button>
       <div id="titolo-mese" class="month-title"></div>
       <button onclick="cambiaMese(1)">Succ &rarr;</button>
     </div>
 
-    <!-- Griglia Calendario -->
     <div class="grid" id="calendario"></div>
   </div>
 
+  <!-- Box Modale Inserimento Password -->
+  <div id="modal-pwd" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3 id="modal-titolo" style="margin-top:0;">Inserisci Password</h3>
+      <input type="password" id="modal-input" placeholder="Password">
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="chiudiModal()">Annulla</button>
+        <button class="btn-confirm" onclick="confermaModal()">OK</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Registrazione Service Worker per PWA
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Errore:', err));
     }
@@ -82,7 +96,7 @@
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let mioGruppo = localStorage.getItem('gruppo_sala_prove');
-
+    let azioneModal = null; // Memorizza l'azione da compiere ('login_A', 'login_B', 'logout')
     let dataVisualizzata = new Date();
 
     function init() {
@@ -95,42 +109,71 @@
       }
     }
 
-    function tentaAccesso(g) {
-      if (document.activeElement) document.activeElement.blur();
-
+    // Gestione Modale Password
+    function apriModalAccesso(g) {
+      azioneModal = 'login_' + g;
       const nome = g === 'A' ? 'Nexus Opera' : 'Black Jett';
-      const pwdInserita = prompt(`Inserisci la password per ${nome}:`);
-      
-      if (document.activeElement) document.activeElement.blur();
-
-      if (pwdInserita === null) return;
-
-      localStorage.setItem('pwd_sala_prove', pwdInserita);
-      localStorage.setItem('gruppo_sala_prove', g);
-      mioGruppo = g;
-      init();
+      document.getElementById('modal-titolo').innerText = `Password per ${nome}`;
+      const input = document.getElementById('modal-input');
+      input.value = '';
+      document.getElementById('modal-pwd').classList.remove('hidden');
+      setTimeout(() => input.focus(), 100);
     }
 
-    function cambiaGruppo() {
-      if (document.activeElement) document.activeElement.blur();
-
+    function apriModalUscita() {
+      azioneModal = 'logout';
       const nome = mioGruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
-      const pwdInserita = prompt(`Inserisci la password di ${nome} per uscire:`);
-      
-      if (document.activeElement) document.activeElement.blur();
-
-      if (pwdInserita === null) return;
-
-      const pwdCorretta = (mioGruppo === 'A') ? "nexus" : "jett";
-      if (pwdInserita !== pwdCorretta) {
-        alert("Password errata!");
-        return;
-      }
-
-      localStorage.removeItem('gruppo_sala_prove');
-      localStorage.removeItem('pwd_sala_prove');
-      location.reload();
+      document.getElementById('modal-titolo').innerText = `Password di ${nome} per uscire`;
+      const input = document.getElementById('modal-input');
+      input.value = '';
+      document.getElementById('modal-pwd').classList.remove('hidden');
+      setTimeout(() => input.focus(), 100);
     }
+
+    function chiudiModal() {
+      const input = document.getElementById('modal-input');
+      input.blur(); // Rimuove il focus e FORZA LA SCOMPARSA DELLA TASTIERA
+      document.getElementById('modal-pwd').classList.add('hidden');
+    }
+
+    function confermaModal() {
+      const input = document.getElementById('modal-input');
+      const pwdInserita = input.value;
+      
+      // Chiusura immediata focus per nascondere la tastiera
+      input.blur();
+      chiudiModal();
+
+      if (!pwdInserita) return;
+
+      if (azioneModal === 'login_A') {
+        localStorage.setItem('pwd_sala_prove', pwdInserita);
+        localStorage.setItem('gruppo_sala_prove', 'A');
+        mioGruppo = 'A';
+        init();
+      } else if (azioneModal === 'login_B') {
+        localStorage.setItem('pwd_sala_prove', pwdInserita);
+        localStorage.setItem('gruppo_sala_prove', 'B');
+        mioGruppo = 'B';
+        init();
+      } else if (azioneModal === 'logout') {
+        const pwdCorretta = (mioGruppo === 'A') ? "nexus" : "jett";
+        if (pwdInserita !== pwdCorretta) {
+          alert("Password errata!");
+          return;
+        }
+        localStorage.removeItem('gruppo_sala_prove');
+        localStorage.removeItem('pwd_sala_prove');
+        location.reload();
+      }
+    }
+
+    // Permette di premere "Invio" sulla tastiera per confermare
+    document.getElementById('modal-input').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        confermaModal();
+      }
+    });
 
     function cambiaMese(direzione) {
       dataVisualizzata.setMonth(dataVisualizzata.getMonth() + direzione);
