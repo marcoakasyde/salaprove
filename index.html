@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sala Prove - Prenotazioni</title>
   <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#222222">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; text-align: center; margin: 0; padding: 20px; background: #222222; color: #f4f4f9; }
@@ -31,10 +32,10 @@
     .day.vuoto { background: transparent; box-shadow: none; cursor: default; }
     .day.libero { background: #666666; color: #fff; cursor: pointer; }
     
-    /* Nexus Opera (Gruppo A): Sempre Bianco con testo scuro per tutti */
+    /* Nexus Opera (Gruppo A): Sempre Bianco */
     .day.gruppo-a { background: #ffffff !important; color: #111111 !important; }
     
-    /* Black Jett (Gruppo B): Sempre Nero con testo bianco e bordo per tutti */
+    /* Black Jett (Gruppo B): Sempre Nero con testo bianco */
     .day.gruppo-b { background: #111111 !important; color: #ffffff !important; border: 1px solid #777; }
     
     .day.disabilitato { cursor: not-allowed; opacity: 0.8; }
@@ -71,6 +72,11 @@
   </div>
 
   <script>
+    // Registrazione Service Worker per PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Errore:', err));
+    }
+
     const SUPABASE_URL = "https://dknjqqzmealcwwrglthe.supabase.co"; 
     const SUPABASE_KEY = "sb_publishable_dGX0VSu1xqMwQnCqq6th9w_DcjJFYhT";
 
@@ -174,16 +180,16 @@
         } else if (occupatoDa === 'A') {
           el.classList.add('gruppo-a');
           if (mioGruppo === 'A') {
-            el.onclick = () => libera(dataStr); // I Nexus possono liberare le loro date
+            el.onclick = () => libera(dataStr);
           } else {
-            el.classList.add('disabilitato'); // I Jett vedono le date Nexus bianche ma non possono toccarle
+            el.classList.add('disabilitato');
           }
         } else if (occupatoDa === 'B') {
           el.classList.add('gruppo-b');
           if (mioGruppo === 'B') {
-            el.onclick = () => libera(dataStr); // I Jett possono liberare le loro date
+            el.onclick = () => libera(dataStr);
           } else {
-            el.classList.add('disabilitato'); // I Nexus vedono le date Jett nere con testo bianco ma non possono toccarle
+            el.classList.add('disabilitato');
           }
         }
 
