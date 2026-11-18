@@ -16,7 +16,7 @@
     button.btn-a { background: #ffffff; color: #111111; padding: 15px 25px; font-size: 18px; font-weight: bold; border: 2px solid #ffffff; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
     button.btn-b { background: #111111; color: #ffffff; padding: 15px 25px; font-size: 18px; font-weight: bold; border: 2px solid #ffffff; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
     
-    /* Pallini colorati identificativi */
+    /* Pallini colorati identificativi per la scelta iniziale e la barra */
     .dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; vertical-align: middle; }
     .dot-a { background: #ffffff; border: 1px solid #777; }
     .dot-b { background: #111111; border: 2px solid #ffffff; }
@@ -48,8 +48,8 @@
     
     .day.disabilitato { cursor: not-allowed; opacity: 0.8; }
 
-    /* Box Prossime Prove in basso */
-    .prossime-prove { max-width: 450px; margin: 20px auto 0; background: #333333; padding: 12px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 14px; font-weight: bold; color: #f4f4f9; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+    /* Box Prossime Prove in basso su due righe */
+    .prossime-prove { max-width: 450px; margin: 20px auto 0; background: #333333; padding: 12px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 14px; font-weight: bold; color: #f4f4f9; text-align: center; }
   </style>
 </head>
 <body>
@@ -307,9 +307,8 @@
       const dataFormattata = dataObj.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
       
       const nomeGruppo = prossima.gruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
-      const dotClass = prossima.gruppo === 'A' ? 'dot-a' : 'dot-b';
 
-      box.innerHTML = `Prossime prove: <span class="dot ${dotClass}" style="margin: 0 4px;"></span><strong style="color:#fff;">${nomeGruppo}</strong> &mdash; ${nomeGiorno} ${dataFormattata}`;
+      box.innerHTML = `Prossime prove: <span style="color:#4CAF50;">${nomeGruppo}</span><br><span style="font-size:13px; color:#aaa; text-transform: capitalize;">${nomeGiorno} ${dataFormattata}</span>`;
     }
 
     async function prenota(dataStr) {
