@@ -49,7 +49,7 @@
     .day.disabilitato { cursor: not-allowed; opacity: 0.8; }
 
     /* Box Prossime Prove in basso */
-    .prossime-prove { max-width: 450px; margin: 20px auto 0; background: #333333; padding: 12px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 14px; font-weight: bold; color: #f4f4f9; text-align: left; }
+    .prossime-prove { max-width: 450px; margin: 20px auto 0; background: #333333; padding: 12px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 14px; font-weight: bold; color: #f4f4f9; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
   </style>
 </head>
 <body>
@@ -309,7 +309,7 @@
       const nomeGruppo = prossima.gruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
       const dotClass = prossima.gruppo === 'A' ? 'dot-a' : 'dot-b';
 
-      box.innerHTML = `Prossime prove: <span class="dot ${dotClass}" style="margin: 0 4px;"></span><strong style="color:#fff;">${nomeGruppo}</strong> <br><span style="font-size:13px; color:#aaa; margin-left:18px;">${nomeGiorno} ${dataFormattata}</span>`;
+      box.innerHTML = `Prossime prove: <span class="dot ${dotClass}" style="margin: 0 4px;"></span><strong style="color:#fff;">${nomeGruppo}</strong> &mdash; ${nomeGiorno} ${dataFormattata}`;
     }
 
     async function prenota(dataStr) {
