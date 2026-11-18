@@ -32,18 +32,19 @@
     .day.vuoto { background: transparent; box-shadow: none; cursor: default; }
     .day.libero { background: #666666; color: #fff; cursor: pointer; }
     
+    /* Evidenziazione Giorno Odierno */
+    .day.oggi { border: 2px solid #4CAF50 !important; box-shadow: 0 0 8px rgba(76, 175, 80, 0.6); }
+
+    /* Nexus Opera (Gruppo A): Sempre Bianco */
     .day.gruppo-a { background: #ffffff !important; color: #111111 !important; }
+    
+    /* Black Jett (Gruppo B): Sempre Nero con testo bianco */
     .day.gruppo-b { background: #111111 !important; color: #ffffff !important; border: 1px solid #777; }
+    
     .day.disabilitato { cursor: not-allowed; opacity: 0.8; }
 
-    /* Modale Password Personalizzato */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-    .modal-box { background: #333; padding: 20px; border-radius: 12px; max-width: 300px; width: 80%; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-    .modal-box input { width: 90%; padding: 10px; margin: 15px 0; border: 1px solid #555; border-radius: 6px; font-size: 16px; background: #222; color: #fff; text-align: center; }
-    .modal-actions { display: flex; justify-content: space-around; }
-    .modal-actions button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .btn-confirm { background: #4CAF50; color: white; }
-    .btn-cancel { background: #f44336; color: white; }
+    /* Box Prossime Prove in basso */
+    .prossime-prove { max-width: 450px; margin: 20px auto 0; background: #333333; padding: 12px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 15px; font-weight: bold; color: #4CAF50; }
   </style>
 </head>
 <body>
@@ -72,16 +73,21 @@
     </div>
 
     <div class="grid" id="calendario"></div>
+
+    <!-- Box Prossime Prove in basso -->
+    <div id="box-prossime-prove" class="prossime-prove">
+      Caricamento prossime prove...
+    </div>
   </div>
 
   <!-- Box Modale Inserimento Password -->
-  <div id="modal-pwd" class="modal-overlay hidden">
-    <div class="modal-box">
-      <h3 id="modal-titolo" style="margin-top:0;">Inserisci Password</h3>
-      <input type="password" id="modal-input" placeholder="Password">
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="chiudiModal()">Annulla</button>
-        <button class="btn-confirm" onclick="confermaModal()">OK</button>
+  <div id="modal-pwd" class="modal-overlay hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;">
+    <div class="modal-box" style="background: #333; padding: 20px; border-radius: 12px; max-width: 300px; width: 80%; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+      <h3 id="modal-titolo" style="margin-top:0; color:#fff;">Inserisci Password</h3>
+      <input type="password" id="modal-input" placeholder="Password" style="width: 90%; padding: 10px; margin: 15px 0; border: 1px solid #555; border-radius: 6px; font-size: 16px; background: #222; color: #fff; text-align: center;">
+      <div class="modal-actions" style="display: flex; justify-content: space-around;">
+        <button class="btn-cancel" onclick="chiudiModal()" style="padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: #f44336; color: white;">Annulla</button>
+        <button class="btn-confirm" onclick="confermaModal()" style="padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: #4CAF50; color: white;">OK</button>
       </div>
     </div>
   </div>
@@ -96,7 +102,7 @@
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let mioGruppo = localStorage.getItem('gruppo_sala_prove');
-    let azioneModal = null; // Memorizza l'azione da compiere ('login_A', 'login_B', 'logout')
+    let azioneModal = null;
     let dataVisualizzata = new Date();
 
     function init() {
@@ -109,7 +115,6 @@
       }
     }
 
-    // Gestione Modale Password
     function apriModalAccesso(g) {
       azioneModal = 'login_' + g;
       const nome = g === 'A' ? 'Nexus Opera' : 'Black Jett';
@@ -132,7 +137,7 @@
 
     function chiudiModal() {
       const input = document.getElementById('modal-input');
-      input.blur(); // Rimuove il focus e FORZA LA SCOMPARSA DELLA TASTIERA
+      input.blur();
       document.getElementById('modal-pwd').classList.add('hidden');
     }
 
@@ -140,7 +145,6 @@
       const input = document.getElementById('modal-input');
       const pwdInserita = input.value;
       
-      // Chiusura immediata focus per nascondere la tastiera
       input.blur();
       chiudiModal();
 
@@ -168,7 +172,6 @@
       }
     }
 
-    // Permette di premere "Invio" sulla tastiera per confermare
     document.getElementById('modal-input').addEventListener('keypress', function (e) {
       if (e.key === 'Enter') {
         confermaModal();
@@ -201,6 +204,9 @@
       const mappaPrenotazioni = {};
       (prenotazioni || []).forEach(p => mappaPrenotazioni[p.data] = p.gruppo);
 
+      // Calcola le prossime prove (la prima data prenotata da oggi in poi)
+      aggiornaBoxProssimeProve(prenotazioni || []);
+
       cal.innerHTML = '';
 
       const nomiGiorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
@@ -224,6 +230,10 @@
         cal.appendChild(vuoto);
       }
 
+      // Ottiene la data odierna in formato YYYY-MM-DD per evidenziarla
+      const oggi = new Date();
+      const oggiStr = `${oggi.getFullYear()}-${String(oggi.getMonth() + 1).padStart(2, '0')}-${String(oggi.getDate()).padStart(2, '0')}`;
+
       for (let giorno = 1; giorno <= totaleGiorni; giorno++) {
         const d = new Date(anno, mese, giorno);
         const annoStr = d.getFullYear();
@@ -234,6 +244,11 @@
         const el = document.createElement('div');
         el.className = 'day';
         el.innerText = giorno;
+
+        // Evidenzia il giorno odierno
+        if (dataStr === oggiStr) {
+          el.classList.add('oggi');
+        }
 
         const occupatoDa = mappaPrenotazioni[dataStr];
 
@@ -258,6 +273,34 @@
 
         cal.appendChild(el);
       }
+    }
+
+    function aggiornaBoxProssimeProve(prenotazioni) {
+      const box = document.getElementById('box-prossime-prove');
+      
+      // Prende la data odierna in formato stringa YYYY-MM-DD (senza orario)
+      const oggi = new Date();
+      oggi.setHours(0, 0, 0, 0);
+
+      // Filtra solo le prenotazioni da oggi in poi e le ordina in ordine cronologico
+      const future = prenotazioni
+        .filter(p => new Date(p.data) >= oggi)
+        .sort((a, b) => new Date(a.data) - new Date(b.data));
+
+      if (future.length === 0) {
+        box.innerText = "Nessuna prova in programma";
+        return;
+      }
+
+      const prossima = future[0]; // La più vicina nel tempo
+      const dataObj = new Date(prossima.data);
+      
+      // Estrae il nome del giorno della settimana (es. "Lunedì") e formatta la data
+      const nomeGiorno = dataObj.toLocaleDateString('it-IT', { weekday: 'long' });
+      const dataFormattata = dataObj.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+      const nomeGruppo = prossima.gruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
+
+      box.innerHTML = `Prossime prove: <span style="color:#fff;">${nomeGruppo}</span> (${nomeGiorno} ${dataFormattata})`;
     }
 
     async function prenota(dataStr) {
