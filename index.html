@@ -326,6 +326,11 @@
     }
 
     async function libera(dataStr) {
+      // Chiede conferma prima di procedere con la cancellazione
+      if (!confirm(`Vuoi davvero cancellare la prenotazione del giorno ${dataStr}?`)) {
+        return;
+      }
+
       const pwd = localStorage.getItem('pwd_sala_prove');
       const { error } = await sb.rpc('f_libera', { 
         p_data: dataStr, 
