@@ -30,8 +30,11 @@
     .month-nav button { background: #555; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .month-title { font-size: 18px; font-weight: bold; text-transform: capitalize; color: #fff; }
 
+    /* Area contenitore touch per abilitare lo swipe orizzontale */
+    .calendar-container { max-width: 450px; margin: 0 auto; touch-action: pan-y; }
+
     /* Calendario Griglia */
-    .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; max-width: 450px; margin: 0 auto; }
+    .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
     .weekday { font-size: 12px; font-weight: bold; color: #aaa; padding-bottom: 4px; }
     .day { padding: 12px 2px; border-radius: 8px; background: #444; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); user-select: none; font-size: 14px; min-height: 42px; display: flex; align-items: center; justify-content: center; }
     .day.vuoto { background: transparent; box-shadow: none; cursor: default; }
@@ -88,7 +91,10 @@
       <button onclick="cambiaMese(1)">Succ &rarr;</button>
     </div>
 
-    <div class="grid" id="calendario"></div>
+    <!-- Contenitore swipeable per il calendario -->
+    <div class="calendar-container" id="swipe-area">
+      <div class="grid" id="calendario"></div>
+    </div>
 
     <!-- Box Prossime Prove in basso -->
     <div id="box-prossime-prove" class="prossime-prove">
@@ -97,7 +103,7 @@
   </div>
 
   <!-- Numero di Release fissa in basso a destra -->
-  <div class="app-version">v1.3</div>
+  <div class="app-version">v1.3.5</div>
 
   <!-- Box Modale Inserimento Password -->
   <div id="modal-pwd" class="modal-overlay hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;">
@@ -135,10 +141,11 @@
         document.getElementById('info-gruppo').innerHTML = `Gruppo: <span class="dot ${dotClass}" style="margin: 0 4px;"></span> ${nomeGruppo}`;
         caricaCalendario();
         attivaRealtime();
+        attivaSwipe();
       }
     }
 
-    // Ascoltatore Realtime Supabase: sincronizza la griglia all'istante
+    // Ascoltatore Realtime Supabase
     function attivaRealtime() {
       sb.channel('cambiamenti-prenotazioni')
         .on(
@@ -151,7 +158,36 @@
         .subscribe();
     }
 
-    // Refresh automatico dei dati quando l'app/scheda torna in primo piano
+    // Gestione dello Swipe (trascinamento del dito) per i mesi
+    function attivaSwipe() {
+      const area = document.getElementById('swipe-area');
+      let startX = 0;
+      let startY = 0;
+
+      area.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+      }, { passive: true });
+
+      area.addEventListener('touchend', (e) => {
+        const endX = e.changedTouches[0].clientX;
+        const endY = e.changedTouches[0].clientY;
+
+        const diffX = endX - startX;
+        const diffY = endY - startY;
+
+        // Verifica che il movimento sia prevalentemente orizzontale e superi 50px
+        if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+          if (diffX < 0) {
+            cambiaMese(1);  // Swipe verso sinistra -> Mese successivo
+          } else {
+            cambiaMese(-1); // Swipe verso destra -> Mese precedente
+          }
+        }
+      }, { passive: true });
+    }
+
+    // Refresh automatico dei dati al rientro
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && mioGruppo) {
         caricaCalendario();
@@ -229,7 +265,6 @@
     async function caricaCalendario() {
       const cal = document.getElementById('calendario');
       
-      // Mantiene la struttura senza flash invadenti se la griglia è già presente
       if (cal.children.length === 0) {
         cal.innerHTML = '<div style="grid-column: span 7; padding: 20px;">Caricamento...</div>';
       }
