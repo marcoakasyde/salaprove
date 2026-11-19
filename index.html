@@ -40,6 +40,9 @@
     /* Evidenziazione Giorno Odierno */
     .day.oggi { border: 2px solid #4CAF50 !important; box-shadow: 0 0 8px rgba(76, 175, 80, 0.6); }
 
+    /* Giorni passati non cliccabili */
+    .day.passato { opacity: 0.35; cursor: not-allowed !important; background: #333 !important; }
+
     /* Nexus Opera (Gruppo A): Sempre Bianco */
     .day.gruppo-a { background: #ffffff !important; color: #111111 !important; }
     
@@ -50,6 +53,7 @@
 
     /* Box Prossime Prove in basso su due righe */
     .prossime-prove { max-width: 450px; margin: 20px auto 0; background: #333333; padding: 12px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 14px; font-weight: bold; color: #f4f4f9; text-align: center; }
+    .prossime-prove .tua-prossima { font-size: 12px; color: #aaa; margin-top: 6px; border-top: 1px solid #444; padding-top: 6px; }
 
     /* Numero di Release fisso in basso a destra */
     .app-version { position: fixed; bottom: 8px; right: 12px; font-size: 11px; color: #777777; background: rgba(34, 34, 34, 0.8); padding: 2px 6px; border-radius: 4px; pointer-events: none; z-index: 999; }
@@ -93,7 +97,7 @@
   </div>
 
   <!-- Numero di Release fissa in basso a destra -->
-  <div class="app-version">v1.1</div>
+  <div class="app-version">v1.2</div>
 
   <!-- Box Modale Inserimento Password -->
   <div id="modal-pwd" class="modal-overlay hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;">
@@ -132,6 +136,13 @@
         caricaCalendario();
       }
     }
+
+    // Refresh automatico dei dati quando l'app/scheda torna in primo piano
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && mioGruppo) {
+        caricaCalendario();
+      }
+    });
 
     function apriModalAccesso(g) {
       azioneModal = 'login_' + g;
@@ -253,6 +264,8 @@
 
       for (let giorno = 1; giorno <= totaleGiorni; giorno++) {
         const d = new Date(anno, mese, giorno);
+        d.setHours(0, 0, 0, 0);
+
         const annoStr = d.getFullYear();
         const meseStr = String(d.getMonth() + 1).padStart(2, '0');
         const giornoStr = String(d.getDate()).padStart(2, '0');
@@ -262,13 +275,19 @@
         el.className = 'day';
         el.innerText = giorno;
 
+        const isPassato = d < oggi;
+
         if (dataStr === oggiStr) {
           el.classList.add('oggi');
         }
 
         const occupatoDa = mappaPrenotazioni[dataStr];
 
-        if (!occupatoDa) {
+        if (isPassato) {
+          el.classList.add('passato');
+          if (occupatoDa === 'A') el.classList.add('gruppo-a');
+          else if (occupatoDa === 'B') el.classList.add('gruppo-b');
+        } else if (!occupatoDa) {
           el.classList.add('libero');
           el.onclick = () => prenota(dataStr);
         } else if (occupatoDa === 'A') {
@@ -306,15 +325,24 @@
         return;
       }
 
-      const prossima = future[0];
-      const dataObj = new Date(prossima.data);
-      
-      const nomeGiorno = dataObj.toLocaleDateString('it-IT', { weekday: 'long' });
-      const dataFormattata = dataObj.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
-      
-      const nomeGruppo = prossima.gruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
+      const prossimaGenerale = future[0];
+      const dataObjGen = new Date(prossimaGenerale.data);
+      const nomeGiornoGen = dataObjGen.toLocaleDateString('it-IT', { weekday: 'long' });
+      const dataFormattataGen = dataObjGen.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+      const nomeGruppoGen = prossimaGenerale.gruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
 
-      box.innerHTML = `Prossime prove: <span style="color:#4CAF50;">${nomeGruppo}</span><br><span style="font-size:13px; color:#aaa; text-transform: capitalize;">${nomeGiorno} ${dataFormattata}</span>`;
+      let html = `Prossime prove: <span style="color:#4CAF50;">${nomeGruppoGen}</span><br><span style="font-size:13px; color:#aaa; text-transform: capitalize;">${nomeGiornoGen} ${dataFormattataGen}</span>`;
+
+      // Cerca la prossima prova del GRUPPO ATTIVO dell'utente
+      const prossimaMioGruppo = future.find(p => p.gruppo === mioGruppo);
+      if (prossimaMioGruppo && prossimaMioGruppo !== prossimaGenerale) {
+        const dataObjMio = new Date(prossimaMioGruppo.data);
+        const nomeGiornoMio = dataObjMio.toLocaleDateString('it-IT', { weekday: 'long' });
+        const dataFormattataMio = dataObjMio.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
+        html += `<div class="tua-prossima">Tua prossima prova: <span style="color:#fff; text-transform: capitalize;">${nomeGiornoMio} ${dataFormattataMio}</span></div>`;
+      }
+
+      box.innerHTML = html;
     }
 
     async function prenota(dataStr) {
