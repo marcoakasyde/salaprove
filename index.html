@@ -97,7 +97,7 @@
   </div>
 
   <!-- Numero di Release fissa in basso a destra -->
-  <div class="app-version">v1.2</div>
+  <div class="app-version">v1.3</div>
 
   <!-- Box Modale Inserimento Password -->
   <div id="modal-pwd" class="modal-overlay hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;">
@@ -134,7 +134,21 @@
         
         document.getElementById('info-gruppo').innerHTML = `Gruppo: <span class="dot ${dotClass}" style="margin: 0 4px;"></span> ${nomeGruppo}`;
         caricaCalendario();
+        attivaRealtime();
       }
+    }
+
+    // Ascoltatore Realtime Supabase: sincronizza la griglia all'istante
+    function attivaRealtime() {
+      sb.channel('cambiamenti-prenotazioni')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'prenotazioni' },
+          () => {
+            caricaCalendario();
+          }
+        )
+        .subscribe();
     }
 
     // Refresh automatico dei dati quando l'app/scheda torna in primo piano
@@ -214,7 +228,11 @@
 
     async function caricaCalendario() {
       const cal = document.getElementById('calendario');
-      cal.innerHTML = '<div style="grid-column: span 7; padding: 20px;">Caricamento...</div>';
+      
+      // Mantiene la struttura senza flash invadenti se la griglia è già presente
+      if (cal.children.length === 0) {
+        cal.innerHTML = '<div style="grid-column: span 7; padding: 20px;">Caricamento...</div>';
+      }
 
       const anno = dataVisualizzata.getFullYear();
       const mese = dataVisualizzata.getMonth();
@@ -225,7 +243,6 @@
       const { data: prenotazioni, error } = await sb.from('prenotazioni').select('*');
       
       if (error) {
-        alert("Errore di connessione al DB!");
         console.error(error);
         return;
       }
@@ -333,7 +350,7 @@
 
       let html = `Prossime prove: <span style="color:#4CAF50;">${nomeGruppoGen}</span><br><span style="font-size:13px; color:#aaa; text-transform: capitalize;">${nomeGiornoGen} ${dataFormattataGen}</span>`;
 
-      // Cerca la prossima prova del GRUPPO ATTIVO dell'utente
+      // Prossima prova specifica del proprio gruppo
       const prossimaMioGruppo = future.find(p => p.gruppo === mioGruppo);
       if (prossimaMioGruppo && prossimaMioGruppo !== prossimaGenerale) {
         const dataObjMio = new Date(prossimaMioGruppo.data);
