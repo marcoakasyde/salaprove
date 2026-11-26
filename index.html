@@ -133,7 +133,6 @@
       background: transparent;
     }
 
-    /* STATI GIORNI FUTURI E OGGI */
     .day.libero {
       background: var(--free-slot);
       color: #ffffff;
@@ -152,7 +151,6 @@
       cursor: pointer;
     }
 
-    /* FIX SPECIFICO V1.4: GIORNI PASSATI */
     .day.passato {
       opacity: 0.45;
       cursor: not-allowed !important;
@@ -160,18 +158,11 @@
       color: #666666 !important;
     }
 
-    /* Distinzione giorno passato prenotato dal Gruppo A */
+    /* Solo modifica colore giorni passati prenotati da Nexus Opera */
     .day.passato.gruppo-a {
       background: var(--past-a-bg) !important;
       color: var(--past-a-text) !important;
       opacity: 0.75 !important;
-    }
-
-    /* Distinzione giorno passato prenotato dal Gruppo B */
-    .day.passato.gruppo-b {
-      background: #b36b00 !important;
-      color: #ffffff !important;
-      opacity: 0.6 !important;
     }
 
     .day:active:not(.empty):not(.passato) {
@@ -203,85 +194,6 @@
       width: 12px;
       height: 12px;
       border-radius: 3px;
-    }
-
-    /* MODALE CUSTOM SCURA (V1.4) */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(4px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease;
-    }
-
-    .modal-overlay.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .modal-card {
-      background: #1e1e1e;
-      border: 1px solid #333;
-      border-radius: 16px;
-      padding: 20px;
-      width: 85%;
-      max-width: 320px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.8);
-      text-align: center;
-      transform: scale(0.9);
-      transition: transform 0.2s ease;
-    }
-
-    .modal-overlay.active .modal-card {
-      transform: scale(1);
-    }
-
-    .modal-title {
-      font-size: 1.05rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #ffffff;
-    }
-
-    .modal-body {
-      font-size: 0.9rem;
-      color: #aaaaaa;
-      margin-bottom: 20px;
-      line-height: 1.4;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    .modal-btn {
-      flex: 1;
-      padding: 10px 0;
-      border-radius: 8px;
-      border: none;
-      font-weight: bold;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
-
-    .modal-btn-cancel {
-      background: #2c2c2c;
-      color: #e0e0e0;
-    }
-
-    .modal-btn-confirm {
-      background: #e53935;
-      color: #ffffff;
     }
   </style>
 </head>
@@ -318,32 +230,17 @@
     </div>
   </div>
 
-  <!-- MODALE SCURA CUSTOM (V1.4) -->
-  <div id="customModal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-title" id="modalTitle">Conferma cancellazione</div>
-      <div class="modal-body" id="modalBody">Vuoi liberare questa data?</div>
-      <div class="modal-actions">
-        <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Annulla</button>
-        <button class="modal-btn modal-btn-confirm" id="modalConfirmBtn">Elimina</button>
-      </div>
-    </div>
-  </div>
-
   <script>
-    // CONFIGURAZIONE SUPABASE
     const SUPABASE_URL = 'https://YOUR-SUPABASE-URL.supabase.co';
     const SUPABASE_KEY = 'YOUR-SUPABASE-ANON-KEY';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentDate = new Date();
     let currentGroup = localStorage.getItem('sala_prove_group') || 'A';
     let bookingsCache = {};
-    let pendingDateToCancel = null;
 
     document.getElementById('groupSelect').value = currentGroup;
 
-    // INIT & LISTENERS REALTIME
     async function init() {
       renderCalendar();
       await fetchBookings();
@@ -369,7 +266,6 @@
       fetchBookings();
     }
 
-    // SWIPE HORIZONAL NAVIGATION (V1.3.5)
     function setupSwipeEvents() {
       const card = document.getElementById('calendarCard');
       let touchStartX = 0;
@@ -391,14 +287,13 @@
       }
     }
 
-    // CARICAMENTO & RENDER
     async function fetchBookings() {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
       const startStr = `${year}-${String(month).padStart(2, '0')}-01`;
       const endStr = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
 
-      const { data, error } = await supabase
+      const { data, error } = await sbClient
         .from('prenotazioni')
         .select('*')
         .gte('data', startStr)
@@ -415,7 +310,7 @@
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
 
-      document.getElementById('monthTitle').innerText = 
+      document.getElementById('monthTitle').innerText =
         new Date(year, month).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
 
       const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
@@ -434,7 +329,7 @@
       for (let day = 1; day <= totalDays; day++) {
         const dayDiv = document.createElement('div');
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        
+
         dayDiv.className = 'day';
         dayDiv.innerText = day;
 
@@ -442,7 +337,7 @@
         const bookedBy = bookingsCache[dateStr];
 
         if (isPast) dayDiv.classList.add('passato');
-        
+
         if (bookedBy === 'A') dayDiv.classList.add('gruppo-a');
         else if (bookedBy === 'B') dayDiv.classList.add('gruppo-b');
         else if (!isPast) dayDiv.classList.add('libero');
@@ -455,47 +350,25 @@
       }
     }
 
-    // GESTIONE TAP & MODALE SCURA CUSTOM
     function handleDayClick(dateStr, bookedBy) {
       if (!bookedBy) {
-        // Prenotazione diretta
         saveBooking(dateStr, currentGroup);
       } else if (bookedBy === currentGroup) {
-        // Apertura Modale Scura Custom per la cancellazione
-        openModal(dateStr);
+        saveBooking(dateStr, null);
       }
-    }
-
-    function openModal(dateStr) {
-      pendingDateToCancel = dateStr;
-      const formattedDate = new Date(dateStr).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
-      document.getElementById('modalBody').innerText = `Vuoi cancellare la prenotazione per ${formattedDate}?`;
-      
-      const confirmBtn = document.getElementById('modalConfirmBtn');
-      confirmBtn.onclick = () => {
-        closeModal();
-        if (pendingDateToCancel) saveBooking(pendingDateToCancel, null);
-      };
-
-      document.getElementById('customModal').classList.add('active');
-    }
-
-    function closeModal() {
-      document.getElementById('customModal').classList.remove('active');
-      pendingDateToCancel = null;
     }
 
     async function saveBooking(dateStr, group) {
       if (group) {
-        await supabase.from('prenotazioni').upsert({ data: dateStr, gruppo: group });
+        await sbClient.from('prenotazioni').upsert({ data: dateStr, gruppo: group });
       } else {
-        await supabase.from('prenotazioni').delete().eq('data', dateStr);
+        await sbClient.from('prenotazioni').delete().eq('data', dateStr);
       }
       fetchBookings();
     }
 
     function setupRealtime() {
-      supabase
+      sbClient
         .channel('schema-db-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'prenotazioni' }, () => {
           fetchBookings();
