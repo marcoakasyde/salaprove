@@ -2,431 +2,505 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sala Prove - Prenotazioni</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Calendario Sala Prove v1.4</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#222222">
+  <meta name="theme-color" content="#121212">
+
+  <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; text-align: center; margin: 0; padding: 20px 20px 40px 20px; background: #222222; color: #f4f4f9; }
-    .hidden { display: none !important; }
-    h2, h3 { margin-bottom: 20px; }
-    
-    .btn-group { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
-    button.btn-a { background: #ffffff; color: #111111; padding: 15px 25px; font-size: 18px; font-weight: bold; border: 2px solid #ffffff; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    button.btn-b { background: #111111; color: #ffffff; padding: 15px 25px; font-size: 18px; font-weight: bold; border: 2px solid #ffffff; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    
-    /* Pallini colorati identificativi per la scelta iniziale e la barra */
-    .dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; vertical-align: middle; }
-    .dot-a { background: #ffffff; border: 1px solid #777; }
-    .dot-b { background: #111111; border: 2px solid #ffffff; }
+    :root {
+      --bg-dark: #121212;
+      --card-bg: #1e1e1e;
+      --text-main: #e0e0e0;
+      --accent-a: #ffffff;
+      --accent-a-text: #111111;
+      --accent-b: #ff9800;
+      --accent-b-text: #000000;
+      --free-slot: #666666;
+      --past-a-bg: #bbbbbb;
+      --past-a-text: #222222;
+    }
 
-    .top-bar { display: flex; justify-content: space-between; align-items: center; max-width: 450px; margin: 0 auto 15px; background: #333333; padding: 10px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-    .group-info { font-weight: bold; color: #fff; display: flex; align-items: center; gap: 8px; }
-    .btn-reset { font-size: 11px; background: #555; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-    /* Navigazione Mesi */
-    .month-nav { display: flex; justify-content: space-between; align-items: center; max-width: 450px; margin: 0 auto 10px; background: #333333; padding: 10px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-    .month-nav button { background: #555; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .month-title { font-size: 18px; font-weight: bold; text-transform: capitalize; color: #fff; }
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
 
-    /* Area contenitore touch per abilitare lo swipe orizzontale */
-    .calendar-container { max-width: 450px; margin: 0 auto; touch-action: pan-y; }
+    .container {
+      width: 100%;
+      max-width: 420px;
+    }
 
-    /* Calendario Griglia */
-    .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-    .weekday { font-size: 12px; font-weight: bold; color: #aaa; padding-bottom: 4px; }
-    .day { padding: 12px 2px; border-radius: 8px; background: #444; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); user-select: none; font-size: 14px; min-height: 42px; display: flex; align-items: center; justify-content: center; }
-    .day.vuoto { background: transparent; box-shadow: none; cursor: default; }
-    .day.libero { background: #666666; color: #fff; cursor: pointer; }
-    
-    /* Evidenziazione Giorno Odierno */
-    .day.oggi { border: 2px solid #4CAF50 !important; box-shadow: 0 0 8px rgba(76, 175, 80, 0.6); }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
 
-    /* Giorni passati non cliccabili */
-    .day.passato { opacity: 0.35; cursor: not-allowed !important; background: #333 !important; }
+    h1 {
+      font-size: 1.2rem;
+      margin: 0;
+      font-weight: 600;
+    }
 
-    /* Nexus Opera (Gruppo A): Sempre Bianco */
-    .day.gruppo-a { background: #ffffff !important; color: #111111 !important; }
-    
-    /* Black Jett (Gruppo B): Sempre Nero con testo bianco */
-    .day.gruppo-b { background: #111111 !important; color: #ffffff !important; border: 1px solid #777; }
-    
-    .day.disabilitato { cursor: not-allowed; opacity: 0.8; }
+    .group-selector {
+      background: var(--card-bg);
+      border: 1px solid #333;
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+    }
 
-    /* Box Prossime Prove in basso su due righe */
-    .prossime-prove { max-width: 450px; margin: 20px auto 0; background: #333333; padding: 12px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 14px; font-weight: bold; color: #f4f4f9; text-align: center; }
-    .prossime-prove .tua-prossima { font-size: 12px; color: #aaa; margin-top: 6px; border-top: 1px solid #444; padding-top: 6px; }
+    .nav-month {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
 
-    /* Numero di Release fisso in basso a destra */
-    .app-version { position: fixed; bottom: 8px; right: 12px; font-size: 11px; color: #777777; background: rgba(34, 34, 34, 0.8); padding: 2px 6px; border-radius: 4px; pointer-events: none; z-index: 999; }
+    .nav-btn {
+      background: var(--card-bg);
+      border: 1px solid #333;
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .month-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .calendar-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      touch-action: pan-y;
+      overflow: hidden;
+    }
+
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: transform 0.1s ease, background-color 0.2s ease;
+    }
+
+    .day.empty {
+      background: transparent;
+    }
+
+    /* STATI GIORNI FUTURI E OGGI */
+    .day.libero {
+      background: var(--free-slot);
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    .day.gruppo-a {
+      background: var(--accent-a) !important;
+      color: var(--accent-a-text) !important;
+      cursor: pointer;
+    }
+
+    .day.gruppo-b {
+      background: var(--accent-b) !important;
+      color: var(--accent-b-text) !important;
+      cursor: pointer;
+    }
+
+    /* FIX SPECIFICO V1.4: GIORNI PASSATI */
+    .day.passato {
+      opacity: 0.45;
+      cursor: not-allowed !important;
+      background: #2a2a2a !important;
+      color: #666666 !important;
+    }
+
+    /* Distinzione giorno passato prenotato dal Gruppo A */
+    .day.passato.gruppo-a {
+      background: var(--past-a-bg) !important;
+      color: var(--past-a-text) !important;
+      opacity: 0.75 !important;
+    }
+
+    /* Distinzione giorno passato prenotato dal Gruppo B */
+    .day.passato.gruppo-b {
+      background: #b36b00 !important;
+      color: #ffffff !important;
+      opacity: 0.6 !important;
+    }
+
+    .day:active:not(.empty):not(.passato) {
+      transform: scale(0.92);
+    }
+
+    .info-box {
+      margin-top: 20px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 0.85rem;
+      border: 1px solid #2a2a2a;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    /* MODALE CUSTOM SCURA (V1.4) */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 20px;
+      width: 85%;
+      max-width: 320px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+      text-align: center;
+      transform: scale(0.9);
+      transition: transform 0.2s ease;
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: scale(1);
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #ffffff;
+    }
+
+    .modal-body {
+      font-size: 0.9rem;
+      color: #aaaaaa;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 10px 0;
+      border-radius: 8px;
+      border: none;
+      font-weight: bold;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .modal-btn-cancel {
+      background: #2c2c2c;
+      color: #e0e0e0;
+    }
+
+    .modal-btn-confirm {
+      background: #e53935;
+      color: #ffffff;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Schermata Selezione Gruppo -->
-  <div id="seleziona-gruppo">
-    <h2>Seleziona il tuo Gruppo</h2>
-    <p>La scelta verrà memorizzata su questo dispositivo.</p>
-    <div class="btn-group">
-      <button class="btn-a" onclick="apriModalAccesso('A')">
-        <span class="dot dot-a"></span> Nexus Opera
-      </button>
-      <button class="btn-b" onclick="apriModalAccesso('B')">
-        <span class="dot dot-b"></span> Black Jett
-      </button>
+  <div class="container">
+    <header>
+      <h1>Sala Prove</h1>
+      <select id="groupSelect" class="group-selector" onchange="changeGroup(this.value)">
+        <option value="A">Nexus Opera</option>
+        <option value="B">Black Jett</option>
+      </select>
+    </header>
+
+    <div class="nav-month">
+      <button class="nav-btn" onclick="prevMonth()">← Prec</button>
+      <div id="monthTitle" class="month-title"></div>
+      <button class="nav-btn" onclick="nextMonth()">Succ →</button>
+    </div>
+
+    <div class="calendar-card" id="calendarCard">
+      <div class="weekdays">
+        <div>LUN</div><div>MAR</div><div>MER</div><div>GIO</div><div>VEN</div><div>SAB</div><div>DOM</div>
+      </div>
+      <div id="daysGrid" class="days-grid"></div>
+    </div>
+
+    <div class="info-box">
+      <div class="legend">
+        <div class="legend-item"><div class="dot" style="background: var(--accent-a)"></div> Nexus Opera</div>
+        <div class="legend-item"><div class="dot" style="background: var(--accent-b)"></div> Black Jett</div>
+        <div class="legend-item"><div class="dot" style="background: var(--free-slot)"></div> Libero</div>
+      </div>
     </div>
   </div>
 
-  <!-- Schermata Calendario -->
-  <div id="app" class="hidden">
-    <div class="top-bar">
-      <span id="info-gruppo" class="group-info"></span>
-      <button class="btn-reset" onclick="apriModalUscita()">Cambia Gruppo</button>
-    </div>
-
-    <div class="month-nav">
-      <button onclick="cambiaMese(-1)">&larr; Prec</button>
-      <div id="titolo-mese" class="month-title"></div>
-      <button onclick="cambiaMese(1)">Succ &rarr;</button>
-    </div>
-
-    <!-- Contenitore swipeable per il calendario -->
-    <div class="calendar-container" id="swipe-area">
-      <div class="grid" id="calendario"></div>
-    </div>
-
-    <!-- Box Prossime Prove in basso -->
-    <div id="box-prossime-prove" class="prossime-prove">
-      Caricamento prossime prove...
-    </div>
-  </div>
-
-  <!-- Numero di Release fissa in basso a destra -->
-  <div class="app-version">v1.3.5</div>
-
-  <!-- Box Modale Inserimento Password -->
-  <div id="modal-pwd" class="modal-overlay hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;">
-    <div class="modal-box" style="background: #333; padding: 20px; border-radius: 12px; max-width: 300px; width: 80%; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-      <h3 id="modal-titolo" style="margin-top:0; color:#fff;">Inserisci Password</h3>
-      <input type="password" id="modal-input" placeholder="Password" style="width: 90%; padding: 10px; margin: 15px 0; border: 1px solid #555; border-radius: 6px; font-size: 16px; background: #222; color: #fff; text-align: center;">
-      <div class="modal-actions" style="display: flex; justify-content: space-around;">
-        <button class="btn-cancel" onclick="chiudiModal()" style="padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: #f44336; color: white;">Annulla</button>
-        <button class="btn-confirm" onclick="confermaModal()" style="padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: #4CAF50; color: white;">OK</button>
+  <!-- MODALE SCURA CUSTOM (V1.4) -->
+  <div id="customModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-title" id="modalTitle">Conferma cancellazione</div>
+      <div class="modal-body" id="modalBody">Vuoi liberare questa data?</div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Annulla</button>
+        <button class="modal-btn modal-btn-confirm" id="modalConfirmBtn">Elimina</button>
       </div>
     </div>
   </div>
 
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Errore:', err));
+    // CONFIGURAZIONE SUPABASE
+    const SUPABASE_URL = 'https://YOUR-SUPABASE-URL.supabase.co';
+    const SUPABASE_KEY = 'YOUR-SUPABASE-ANON-KEY';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentDate = new Date();
+    let currentGroup = localStorage.getItem('sala_prove_group') || 'A';
+    let bookingsCache = {};
+    let pendingDateToCancel = null;
+
+    document.getElementById('groupSelect').value = currentGroup;
+
+    // INIT & LISTENERS REALTIME
+    async function init() {
+      renderCalendar();
+      await fetchBookings();
+      setupRealtime();
+      setupSwipeEvents();
     }
 
-    const SUPABASE_URL = "https://dknjqqzmealcwwrglthe.supabase.co"; 
-    const SUPABASE_KEY = "sb_publishable_dGX0VSu1xqMwQnCqq6th9w_DcjJFYhT";
+    function changeGroup(val) {
+      currentGroup = val;
+      localStorage.setItem('sala_prove_group', val);
+      renderCalendar();
+    }
 
-    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    let mioGruppo = localStorage.getItem('gruppo_sala_prove');
-    let azioneModal = null;
-    let dataVisualizzata = new Date();
+    function prevMonth() {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCalendar();
+      fetchBookings();
+    }
 
-    function init() {
-      if (mioGruppo) {
-        document.getElementById('seleziona-gruppo').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        
-        const dotClass = mioGruppo === 'A' ? 'dot-a' : 'dot-b';
-        const nomeGruppo = mioGruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
-        
-        document.getElementById('info-gruppo').innerHTML = `Gruppo: <span class="dot ${dotClass}" style="margin: 0 4px;"></span> ${nomeGruppo}`;
-        caricaCalendario();
-        attivaRealtime();
-        attivaSwipe();
+    function nextMonth() {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+      fetchBookings();
+    }
+
+    // SWIPE HORIZONAL NAVIGATION (V1.3.5)
+    function setupSwipeEvents() {
+      const card = document.getElementById('calendarCard');
+      let touchStartX = 0;
+      let touchEndX = 0;
+
+      card.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
+
+      card.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+      }, { passive: true });
+
+      function handleSwipe() {
+        const threshold = 40;
+        if (touchStartX - touchEndX > threshold) nextMonth();
+        if (touchEndX - touchStartX > threshold) prevMonth();
       }
     }
 
-    // Ascoltatore Realtime Supabase
-    function attivaRealtime() {
-      sb.channel('cambiamenti-prenotazioni')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'prenotazioni' },
-          () => {
-            caricaCalendario();
-          }
-        )
+    // CARICAMENTO & RENDER
+    async function fetchBookings() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      const startStr = `${year}-${String(month).padStart(2, '0')}-01`;
+      const endStr = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
+
+      const { data, error } = await supabase
+        .from('prenotazioni')
+        .select('*')
+        .gte('data', startStr)
+        .lte('data', endStr);
+
+      if (!error && data) {
+        bookingsCache = {};
+        data.forEach(b => { bookingsCache[b.data] = b.gruppo; });
+        renderCalendar();
+      }
+    }
+
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      document.getElementById('monthTitle').innerText = 
+        new Date(year, month).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+
+      const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
+      const totalDays = new Date(year, month + 1, 0).getDate();
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      const grid = document.getElementById('daysGrid');
+      grid.innerHTML = '';
+
+      for (let i = 0; i < firstDayIndex; i++) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'day empty';
+        grid.appendChild(emptyDiv);
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        const dayDiv = document.createElement('div');
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        dayDiv.className = 'day';
+        dayDiv.innerText = day;
+
+        const isPast = dateStr < todayStr;
+        const bookedBy = bookingsCache[dateStr];
+
+        if (isPast) dayDiv.classList.add('passato');
+        
+        if (bookedBy === 'A') dayDiv.classList.add('gruppo-a');
+        else if (bookedBy === 'B') dayDiv.classList.add('gruppo-b');
+        else if (!isPast) dayDiv.classList.add('libero');
+
+        if (!isPast) {
+          dayDiv.onclick = () => handleDayClick(dateStr, bookedBy);
+        }
+
+        grid.appendChild(dayDiv);
+      }
+    }
+
+    // GESTIONE TAP & MODALE SCURA CUSTOM
+    function handleDayClick(dateStr, bookedBy) {
+      if (!bookedBy) {
+        // Prenotazione diretta
+        saveBooking(dateStr, currentGroup);
+      } else if (bookedBy === currentGroup) {
+        // Apertura Modale Scura Custom per la cancellazione
+        openModal(dateStr);
+      }
+    }
+
+    function openModal(dateStr) {
+      pendingDateToCancel = dateStr;
+      const formattedDate = new Date(dateStr).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
+      document.getElementById('modalBody').innerText = `Vuoi cancellare la prenotazione per ${formattedDate}?`;
+      
+      const confirmBtn = document.getElementById('modalConfirmBtn');
+      confirmBtn.onclick = () => {
+        closeModal();
+        if (pendingDateToCancel) saveBooking(pendingDateToCancel, null);
+      };
+
+      document.getElementById('customModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('customModal').classList.remove('active');
+      pendingDateToCancel = null;
+    }
+
+    async function saveBooking(dateStr, group) {
+      if (group) {
+        await supabase.from('prenotazioni').upsert({ data: dateStr, gruppo: group });
+      } else {
+        await supabase.from('prenotazioni').delete().eq('data', dateStr);
+      }
+      fetchBookings();
+    }
+
+    function setupRealtime() {
+      supabase
+        .channel('schema-db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'prenotazioni' }, () => {
+          fetchBookings();
+        })
         .subscribe();
-    }
-
-    // Gestione dello Swipe (trascinamento del dito) per i mesi
-    function attivaSwipe() {
-      const area = document.getElementById('swipe-area');
-      let startX = 0;
-      let startY = 0;
-
-      area.addEventListener('touchstart', (e) => {
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-      }, { passive: true });
-
-      area.addEventListener('touchend', (e) => {
-        const endX = e.changedTouches[0].clientX;
-        const endY = e.changedTouches[0].clientY;
-
-        const diffX = endX - startX;
-        const diffY = endY - startY;
-
-        // Verifica che il movimento sia prevalentemente orizzontale e superi 50px
-        if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
-          if (diffX < 0) {
-            cambiaMese(1);  // Swipe verso sinistra -> Mese successivo
-          } else {
-            cambiaMese(-1); // Swipe verso destra -> Mese precedente
-          }
-        }
-      }, { passive: true });
-    }
-
-    // Refresh automatico dei dati al rientro
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && mioGruppo) {
-        caricaCalendario();
-      }
-    });
-
-    function apriModalAccesso(g) {
-      azioneModal = 'login_' + g;
-      const nome = g === 'A' ? 'Nexus Opera' : 'Black Jett';
-      document.getElementById('modal-titolo').innerText = `Password per ${nome}`;
-      const input = document.getElementById('modal-input');
-      input.value = '';
-      document.getElementById('modal-pwd').classList.remove('hidden');
-      setTimeout(() => input.focus(), 100);
-    }
-
-    function apriModalUscita() {
-      azioneModal = 'logout';
-      const nome = mioGruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
-      document.getElementById('modal-titolo').innerText = `Password di ${nome} per uscire`;
-      const input = document.getElementById('modal-input');
-      input.value = '';
-      document.getElementById('modal-pwd').classList.remove('hidden');
-      setTimeout(() => input.focus(), 100);
-    }
-
-    function chiudiModal() {
-      const input = document.getElementById('modal-input');
-      input.blur();
-      document.getElementById('modal-pwd').classList.add('hidden');
-    }
-
-    function confermaModal() {
-      const input = document.getElementById('modal-input');
-      const pwdInserita = input.value;
-      
-      input.blur();
-      chiudiModal();
-
-      if (!pwdInserita) return;
-
-      if (azioneModal === 'login_A') {
-        localStorage.setItem('pwd_sala_prove', pwdInserita);
-        localStorage.setItem('gruppo_sala_prove', 'A');
-        mioGruppo = 'A';
-        init();
-      } else if (azioneModal === 'login_B') {
-        localStorage.setItem('pwd_sala_prove', pwdInserita);
-        localStorage.setItem('gruppo_sala_prove', 'B');
-        mioGruppo = 'B';
-        init();
-      } else if (azioneModal === 'logout') {
-        const pwdCorretta = (mioGruppo === 'A') ? "nexus" : "jett";
-        if (pwdInserita !== pwdCorretta) {
-          alert("Password errata!");
-          return;
-        }
-        localStorage.removeItem('gruppo_sala_prove');
-        localStorage.removeItem('pwd_sala_prove');
-        location.reload();
-      }
-    }
-
-    document.getElementById('modal-input').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') {
-        confermaModal();
-      }
-    });
-
-    function cambiaMese(direzione) {
-      dataVisualizzata.setMonth(dataVisualizzata.getMonth() + direzione);
-      caricaCalendario();
-    }
-
-    async function caricaCalendario() {
-      const cal = document.getElementById('calendario');
-      
-      if (cal.children.length === 0) {
-        cal.innerHTML = '<div style="grid-column: span 7; padding: 20px;">Caricamento...</div>';
-      }
-
-      const anno = dataVisualizzata.getFullYear();
-      const mese = dataVisualizzata.getMonth();
-
-      const nomeMese = dataVisualizzata.toLocaleString('it-IT', { month: 'long', year: 'numeric' });
-      document.getElementById('titolo-mese').innerText = nomeMese;
-
-      const { data: prenotazioni, error } = await sb.from('prenotazioni').select('*');
-      
-      if (error) {
-        console.error(error);
-        return;
-      }
-
-      const mappaPrenotazioni = {};
-      (prenotazioni || []).forEach(p => mappaPrenotazioni[p.data] = p.gruppo);
-
-      aggiornaBoxProssimeProve(prenotazioni || []);
-
-      cal.innerHTML = '';
-
-      const nomiGiorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
-      nomiGiorni.forEach(g => {
-        const div = document.createElement('div');
-        div.className = 'weekday';
-        div.innerText = g;
-        cal.appendChild(div);
-      });
-
-      const primoGiornoDelMese = new Date(anno, mese, 1);
-      const ultimoGiornoDelMese = new Date(anno, mese + 1, 0);
-      const totaleGiorni = ultimoGiornoDelMese.getDate();
-
-      let giornoSettimanaInizio = primoGiornoDelMese.getDay();
-      giornoSettimanaInizio = (giornoSettimanaInizio === 0) ? 6 : giornoSettimanaInizio - 1;
-
-      for (let i = 0; i < giornoSettimanaInizio; i++) {
-        const vuoto = document.createElement('div');
-        vuoto.className = 'day vuoto';
-        cal.appendChild(vuoto);
-      }
-
-      const oggi = new Date();
-      oggi.setHours(0, 0, 0, 0);
-      const oggiStr = `${oggi.getFullYear()}-${String(oggi.getMonth() + 1).padStart(2, '0')}-${String(oggi.getDate()).padStart(2, '0')}`;
-
-      for (let giorno = 1; giorno <= totaleGiorni; giorno++) {
-        const d = new Date(anno, mese, giorno);
-        d.setHours(0, 0, 0, 0);
-
-        const annoStr = d.getFullYear();
-        const meseStr = String(d.getMonth() + 1).padStart(2, '0');
-        const giornoStr = String(d.getDate()).padStart(2, '0');
-        const dataStr = `${annoStr}-${meseStr}-${giornoStr}`;
-
-        const el = document.createElement('div');
-        el.className = 'day';
-        el.innerText = giorno;
-
-        const isPassato = d < oggi;
-
-        if (dataStr === oggiStr) {
-          el.classList.add('oggi');
-        }
-
-        const occupatoDa = mappaPrenotazioni[dataStr];
-
-        if (isPassato) {
-          el.classList.add('passato');
-          if (occupatoDa === 'A') el.classList.add('gruppo-a');
-          else if (occupatoDa === 'B') el.classList.add('gruppo-b');
-        } else if (!occupatoDa) {
-          el.classList.add('libero');
-          el.onclick = () => prenota(dataStr);
-        } else if (occupatoDa === 'A') {
-          el.classList.add('gruppo-a');
-          if (mioGruppo === 'A') {
-            el.onclick = () => libera(dataStr);
-          } else {
-            el.classList.add('disabilitato');
-          }
-        } else if (occupatoDa === 'B') {
-          el.classList.add('gruppo-b');
-          if (mioGruppo === 'B') {
-            el.onclick = () => libera(dataStr);
-          } else {
-            el.classList.add('disabilitato');
-          }
-        }
-
-        cal.appendChild(el);
-      }
-    }
-
-    function aggiornaBoxProssimeProve(prenotazioni) {
-      const box = document.getElementById('box-prossime-prove');
-      
-      const oggi = new Date();
-      oggi.setHours(0, 0, 0, 0);
-
-      const future = prenotazioni
-        .filter(p => new Date(p.data) >= oggi)
-        .sort((a, b) => new Date(a.data) - new Date(b.data));
-
-      if (future.length === 0) {
-        box.innerText = "Nessuna prova in programma";
-        return;
-      }
-
-      const prossimaGenerale = future[0];
-      const dataObjGen = new Date(prossimaGenerale.data);
-      const nomeGiornoGen = dataObjGen.toLocaleDateString('it-IT', { weekday: 'long' });
-      const dataFormattataGen = dataObjGen.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
-      const nomeGruppoGen = prossimaGenerale.gruppo === 'A' ? 'Nexus Opera' : 'Black Jett';
-
-      let html = `Prossime prove: <span style="color:#4CAF50;">${nomeGruppoGen}</span><br><span style="font-size:13px; color:#aaa; text-transform: capitalize;">${nomeGiornoGen} ${dataFormattataGen}</span>`;
-
-      // Prossima prova specifica del proprio gruppo
-      const prossimaMioGruppo = future.find(p => p.gruppo === mioGruppo);
-      if (prossimaMioGruppo && prossimaMioGruppo !== prossimaGenerale) {
-        const dataObjMio = new Date(prossimaMioGruppo.data);
-        const nomeGiornoMio = dataObjMio.toLocaleDateString('it-IT', { weekday: 'long' });
-        const dataFormattataMio = dataObjMio.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
-        html += `<div class="tua-prossima">Tua prossima prova: <span style="color:#fff; text-transform: capitalize;">${nomeGiornoMio} ${dataFormattataMio}</span></div>`;
-      }
-
-      box.innerHTML = html;
-    }
-
-    async function prenota(dataStr) {
-      const pwd = localStorage.getItem('pwd_sala_prove');
-      const { error } = await sb.rpc('f_prenota', { 
-        p_data: dataStr, 
-        p_gruppo: mioGruppo, 
-        p_password: pwd 
-      });
-
-      if (error) {
-        alert("Operazione non consentita: Password errata o data già occupata!");
-      }
-      caricaCalendario();
-    }
-
-    async function libera(dataStr) {
-      if (!confirm(`Vuoi davvero cancellare la prenotazione del giorno ${dataStr}?`)) {
-        return;
-      }
-
-      const pwd = localStorage.getItem('pwd_sala_prove');
-      const { error } = await sb.rpc('f_libera', { 
-        p_data: dataStr, 
-        p_gruppo: mioGruppo, 
-        p_password: pwd 
-      });
-
-      if (error) {
-        alert("Impossibile eliminare: Password errata o non autorizzato!");
-      }
-      caricaCalendario();
     }
 
     init();
