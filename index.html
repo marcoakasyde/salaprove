@@ -36,7 +36,7 @@
     /* Calendario Griglia */
     .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
     .weekday { font-size: 12px; font-weight: bold; color: #aaa; padding-bottom: 4px; }
-   .day { padding: 4px 2px; aspect-ratio: 1 / 1; border-radius: 8px; background: #444; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); user-select: none; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+    .day { padding: 4px 2px; aspect-ratio: 1 / 1; border-radius: 8px; background: #444; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); user-select: none; font-size: 14px; display: flex; align-items: center; justify-content: center; }
     .day.vuoto { background: transparent; box-shadow: none; cursor: default; }
     .day.libero { background: #666666; color: #fff; cursor: pointer; }
     
@@ -60,6 +60,13 @@
     /* Box Prossime Prove in basso su due righe */
     .prossime-prove { max-width: 450px; margin: 20px auto 0; background: #333333; padding: 12px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 14px; font-weight: bold; color: #f4f4f9; text-align: center; }
     .prossime-prove .tua-prossima { font-size: 12px; color: #aaa; margin-top: 6px; border-top: 1px solid #444; padding-top: 6px; }
+
+    /* Box Ultime 5 Azioni sotto Prossime Prove */
+    .ultime-azioni { max-width: 450px; margin: 12px auto 0; background: #333333; padding: 12px 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 12px; color: #ccc; text-align: left; }
+    .ultime-azioni-titolo { font-size: 12px; font-weight: bold; color: #aaa; margin-bottom: 8px; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
+    .azione-riga { padding: 4px 0; border-top: 1px solid #444; display: flex; align-items: center; gap: 6px; line-height: 1.3; }
+    .azione-riga:first-of-type { border-top: none; padding-top: 0; }
+    .azione-vuota { font-size: 12px; color: #888; text-align: center; }
 
     /* Numero di Release fisso in basso a destra */
     .app-version { position: fixed; bottom: 8px; right: 12px; font-size: 11px; color: #777777; background: rgba(34, 34, 34, 0.8); padding: 2px 6px; border-radius: 4px; pointer-events: none; z-index: 999; }
@@ -103,10 +110,16 @@
     <div id="box-prossime-prove" class="prossime-prove">
       Caricamento prossime prove...
     </div>
+
+    <!-- Box Ultime 5 Azioni -->
+    <div id="box-ultime-azioni" class="ultime-azioni">
+      <div class="ultime-azioni-titolo">Ultime 5 azioni</div>
+      <div id="lista-ultime-azioni" class="azione-vuota">Caricamento azioni...</div>
+    </div>
   </div>
 
   <!-- Numero di Release fissa in basso a destra -->
-  <div class="app-version">v1.4</div>
+  <div class="app-version">v1.4.1</div>
 
   <!-- Box Modale Inserimento Password -->
   <div id="modal-pwd" class="modal-overlay hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;">
@@ -143,6 +156,7 @@
         
         document.getElementById('info-gruppo').innerHTML = `Gruppo: <span class="dot ${dotClass}" style="margin: 0 4px;"></span> ${nomeGruppo}`;
         caricaCalendario();
+        caricaUltimeAzioni();
         attivaRealtime();
         attivaSwipe();
       }
@@ -156,6 +170,14 @@
           { event: '*', schema: 'public', table: 'prenotazioni' },
           () => {
             caricaCalendario();
+            caricaUltimeAzioni();
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'log_prenotazioni' },
+          () => {
+            caricaUltimeAzioni();
           }
         )
         .subscribe();
@@ -194,6 +216,7 @@
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && mioGruppo) {
         caricaCalendario();
+        caricaUltimeAzioni();
       }
     });
 
@@ -365,6 +388,52 @@
       }
     }
 
+    function formattaDataLog(dataStr) {
+      if (!dataStr) return '';
+      const parti = dataStr.split('-');
+      if (parti.length !== 3) return dataStr;
+      const anno = parseInt(parti[0], 10);
+      const mese = parti[1];
+      const giorno = parti[2];
+      const annoCorrente = new Date().getFullYear();
+      return anno === annoCorrente ? `${giorno}/${mese}` : `${giorno}/${mese}/${anno}`;
+    }
+
+    async function caricaUltimeAzioni() {
+      const contenitore = document.getElementById('lista-ultime-azioni');
+      if (!contenitore) return;
+
+      const { data, error } = await sb
+        .from('log_prenotazioni')
+        .select('gruppo, azione, data_prenotazione')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error(error);
+        contenitore.className = 'azione-vuota';
+        contenitore.innerText = 'Storico non disponibile';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        contenitore.className = 'azione-vuota';
+        contenitore.innerText = 'Nessuna azione recente';
+        return;
+      }
+
+      contenitore.className = '';
+      contenitore.innerHTML = data.map(item => {
+        const isA = item.gruppo === 'A';
+        const nomeGruppo = isA ? 'Nexus Opera' : 'Black Jett';
+        const dotClass = isA ? 'dot-a' : 'dot-b';
+        const verbo = item.azione === 'cancellato' ? 'ha cancellato il' : 'ha prenotato il';
+        const dataFormattata = formattaDataLog(item.data_prenotazione);
+
+        return `<div class="azione-riga"><span class="dot ${dotClass}" style="width: 9px; height: 9px; flex-shrink: 0;"></span><span><strong style="color:#fff;">${nomeGruppo}</strong> ${verbo} <strong style="color:#fff;">${dataFormattata}</strong></span></div>`;
+      }).join('');
+    }
+
     function aggiornaBoxProssimeProve(prenotazioni) {
       const box = document.getElementById('box-prossime-prove');
       
@@ -412,6 +481,7 @@
         alert("Operazione non consentita: Password errata o data già occupata!");
       }
       caricaCalendario();
+      caricaUltimeAzioni();
     }
 
     async function libera(dataStr) {
@@ -430,6 +500,7 @@
         alert("Impossibile eliminare: Password errata o non autorizzato!");
       }
       caricaCalendario();
+      caricaUltimeAzioni();
     }
 
     init();
