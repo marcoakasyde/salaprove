@@ -48,6 +48,9 @@
 
     /* Nexus Opera (Gruppo A): Sempre Bianco */
     .day.gruppo-a { background: #ffffff !important; color: #111111 !important; }
+
+    /* Giorni passati prenotati da Nexus Opera: grigio chiaro distinto dai giorni futuri liberi */
+    .day.passato.gruppo-a { background: #bbbbbb !important; color: #222222 !important; opacity: 0.75 !important; }
     
     /* Black Jett (Gruppo B): Sempre Nero con testo bianco */
     .day.gruppo-b { background: #111111 !important; color: #ffffff !important; border: 1px solid #777; }
@@ -103,7 +106,7 @@
   </div>
 
   <!-- Numero di Release fissa in basso a destra -->
-  <div class="app-version">v1.3.5</div>
+  <div class="app-version">v1.4</div>
 
   <!-- Box Modale Inserimento Password -->
   <div id="modal-pwd" class="modal-overlay hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;">
